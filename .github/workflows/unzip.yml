@@ -1,0 +1,15 @@
+name: Unzip GiteePro
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Unzip GiteePro.zip to project root
+        run: |
+          unzip -o GiteePro.zip -d .
