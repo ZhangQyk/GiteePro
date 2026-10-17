@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gitee Pro</title>
+<link rel="stylesheet" href="style.css">
+<script>
+  function bootFail(msg) {
+    var e = document.getElementById('js-error');
+    if (e) { e.textContent = msg; e.classList.remove('hidden'); }
+  }
+  window.addEventListener('error', function (ev) {
+    bootFail('脚本错误：' + (ev && ev.message ? ev.message : '未知'));
+  });
+</script>
+</head>
+<body>
+<div id="app">
+
+  <div id="boot" class="boot">
+    <div class="boot-logo">Gitee<b>Pro</b></div>
+    <div class="boot-sub">正在加载…</div>
+  </div>
+  <div id="js-error" class="js-error hidden"></div>
+
+  <!-- ============ 登录 ============ -->
+  <section id="view-login" class="view hidden">
+    <div class="login-wrap">
+      <div class="login-logo">Gitee<b>Pro</b></div>
+      <div class="login-card">
+        <div class="login-title">登录 Gitee</div>
+        <p class="hint">使用私人令牌（access_token）登录。创建令牌时请勾选 <b>projects（仓库）</b>、<b>user_info（用户信息）</b> 等权限；没有令牌请点下方按钮去创建。</p>
+        <button id="get-token-btn" class="btn-mini">去 Gitee 创建令牌 ↗</button>
+
+        <div class="login-divider">私人令牌</div>
+
+        <label class="field-label">访问令牌 access_token</label>
+        <input id="login-token" type="text" placeholder="粘贴私人令牌">
+        <button id="login-btn" class="btn-primary">令牌登录</button>
+        <div id="login-msg" class="login-msg"></div>
+      </div>
+      <div class="login-safe">令牌仅保存在本机，直连 Gitee 官方接口</div>
+      <div class="login-foot">仅用于访问 Gitee 开放 API · 登录态保存在本机</div>
+    </div>
+  </section>
+
+  <!-- ============ 仓库列表 ============ -->
+  <section id="view-home" class="view hidden">
+    <header class="topbar">
+      <div class="tb-left">
+        <div id="user-avatar" class="avatar"></div>
+        <div class="tb-titles">
+          <div id="user-name" class="tb-title">未登录</div>
+          <div id="user-login" class="tb-sub"></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button id="btn-theme" class="text-btn" title="切换主题">夜间</button>
+        <button id="btn-new-repo" class="icon-btn" title="新建仓库">＋</button>
+        <button id="btn-logout" class="text-btn danger" title="退出登录">退出</button>
+      </div>
+    </header>
+
+    <div class="filter-tabs" id="filter-tabs"></div>
+
+    <div class="searchbar">
+      <input id="search-input" type="text" placeholder="搜索仓库（回车）" enterkeyhint="search">
+      <button id="search-btn" class="btn-mini">搜索</button>
+    </div>
+
+    <main class="scroll" id="repo-list"></main>
+  </section>
+
+  <!-- ============ 仓库详情 ============ -->
+  <section id="view-repo" class="view hidden">
+    <header class="topbar">
+      <div class="tb-left">
+        <button id="repo-back" class="icon-btn">‹</button>
+        <div class="tb-titles">
+          <div id="repo-name" class="tb-title repo-title"></div>
+          <div id="repo-desc" class="tb-sub"></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button id="repo-star" class="icon-btn" title="Star">☆</button>
+        <button id="repo-search-toggle" class="text-btn" title="搜索代码">搜索</button>
+        <button id="repo-menu" class="icon-btn" title="菜单">⋮</button>
+      </div>
+    </header>
+
+    <div class="repo-meta" id="repo-meta"></div>
+
+    <div class="repo-tabs" id="repo-tabs"></div>
+
+    <div id="pane-files" class="pane">
+      <div class="branchbar">
+        <span class="branch-label">分支</span>
+        <select id="branch-select"></select>
+        <span class="branch-label">标签</span>
+        <select id="tag-select"></select>
+        <button id="repo-refresh" class="btn-mini">刷新</button>
+      </div>
+      <div class="code-searchbar hidden" id="code-searchbar">
+        <input id="code-query" type="text" placeholder="搜索本仓库代码（回车）" enterkeyhint="search">
+        <button id="code-search-btn" class="btn-mini">搜索</button>
+      </div>
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <main class="scroll" id="file-list"></main>
+      <div class="fab-group">
+        <button id="fab-new-file" class="fab" title="新建文件">＋</button>
+        <button id="fab-upload" class="fab fab2" title="上传文件">↑</button>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="pane hidden">
+      <main class="scroll readme-wrap"><div id="readme-content" class="markdown-body"></div></main>
+    </div>
+
+    <div id="pane-commits" class="pane hidden">
+      <main class="scroll" id="commit-list"></main>
+    </div>
+
+    <div id="pane-issues" class="pane hidden">
+      <div class="subfilter" id="issue-filter"></div>
+      <button id="new-issue-btn" class="btn-new-simple">＋ 新建 Issue</button>
+      <main class="scroll" id="issue-list"></main>
+    </div>
+
+    <div id="pane-pulls" class="pane hidden">
+      <div class="subfilter" id="pr-filter"></div>
+      <main class="scroll" id="pull-list"></main>
+    </div>
+  </section>
+
+  <!-- ============ 文件查看 / 编辑 ============ -->
+  <section id="view-file" class="view hidden">
+    <header class="topbar">
+      <div class="tb-left">
+        <button id="file-back" class="icon-btn">‹</button>
+        <div class="tb-titles">
+          <div id="file-name" class="tb-title file-title"></div>
+          <div id="file-size" class="tb-sub"></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button id="file-download" class="text-btn" title="下载">下载</button>
+        <button id="file-edit" class="text-btn" title="编辑">编辑</button>
+        <button id="file-del" class="text-btn danger" title="删除">删除</button>
+      </div>
+    </header>
+
+    <div class="file-editbar hidden" id="file-editbar">
+      <input id="commit-msg" type="text" placeholder="提交信息（可选）">
+      <button id="file-save" class="btn-primary">保存</button>
+    </div>
+
+    <main class="scroll file-content" id="file-content"></main>
+  </section>
+
+  <!-- ============ 通用弹窗 ============ -->
+  <div id="modal-mask" class="modal-mask hidden">
+    <div class="modal">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <div id="loading" class="loading hidden">加载中…</div>
+
+</div>
+<script src="app.js" onerror="bootFail('加载 app.js 失败')"></script>
+</body>
+</html>
